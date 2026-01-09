@@ -7,7 +7,6 @@ from telegram.error import TelegramError
 # ---- Google GenAI ----
 from google.genai import client
 
-
 # ---- Logging ----
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -40,11 +39,16 @@ async def handyman(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     try:
-        response = genai.chat.create(
+        # Fixed Google GenAI usage
+        response = genai_client.chat.completions.create(
             model="chat-bison-001",
-            messages=[{"role": "user", "content": user_text}]
+            messages=[{"author": "user", "content": user_text}]
         )
-        await update.message.reply_text(response.last.message.content)
+
+        # Extract the AI's reply
+        ai_reply = response.completion[0].content[0].text
+
+        await update.message.reply_text(ai_reply)
     except Exception as e:
         logger.error(f"GenAI error: {e}")
         await update.message.reply_text("Sorry, something went wrong with the AI request.")
@@ -76,6 +80,8 @@ def main():
 # ---- Entry Point ----
 if __name__ == "__main__":
     main()
+main()
+
 
 
 
