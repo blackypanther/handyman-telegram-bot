@@ -7,6 +7,7 @@ from telegram.error import TelegramError
 # ---- Google GenAI ----
 import google.genai as genai
 
+
 # ---- Logging ----
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -75,3 +76,4 @@ def main():
 # ---- Entry Point ----
 if __name__ == "__main__":
     main()
+
