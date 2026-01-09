@@ -5,7 +5,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from telegram.error import TelegramError
 
 # ---- Google GenAI ----
-import google.genai as genai
+from google.genai import client
 
 
 # ---- Logging ----
@@ -24,7 +24,7 @@ if not TELEGRAM_TOKEN or not GEN_API_KEY:
     exit(1)
 
 # Initialize Google GenAI client
-genai.configure(api_key=GEN_API_KEY)
+client.configure(api_key=GEN_API_KEY)
 
 # ---- Command Handlers ----
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -76,4 +76,5 @@ def main():
 # ---- Entry Point ----
 if __name__ == "__main__":
     main()
+
 
