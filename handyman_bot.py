@@ -5,7 +5,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from telegram.error import TelegramError
 
 # ---- Google GenAI ----
-from google.genai import client
+from google.genai import client as genai_client
 
 # ---- Logging ----
 logging.basicConfig(
@@ -19,11 +19,11 @@ TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 GEN_API_KEY = os.environ.get("GEN_API_KEY")
 
 if not TELEGRAM_TOKEN or not GEN_API_KEY:
-    logger.error("Environment variables TELEGRAM_TOKEN or GEN_API_KEY not set!")
+    logger.critical("Environment variables TELEGRAM_TOKEN or GEN_API_KEY not set!")
     exit(1)
 
-# Initialize Google GenAI client
-genai_client = client.Client(api_key=GEN_API_KEY)
+# ---- Initialize Google GenAI Client ----
+genai = genai_client.Client(api_key=GEN_API_KEY)
 
 # ---- Command Handlers ----
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -39,16 +39,11 @@ async def handyman(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     try:
-        # Fixed Google GenAI usage
-        response = genai_client.chat.completions.create(
+        response = genai.chat.create(
             model="chat-bison-001",
-            messages=[{"author": "user", "content": user_text}]
+            messages=[{"role": "user", "content": user_text}]
         )
-
-        # Extract the AI's reply
-        ai_reply = response.completion[0].content[0].text
-
-        await update.message.reply_text(ai_reply)
+        await update.message.reply_text(response.last.message.content)
     except Exception as e:
         logger.error(f"GenAI error: {e}")
         await update.message.reply_text("Sorry, something went wrong with the AI request.")
@@ -62,17 +57,17 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         logger.error(f"Failed to send error message: {e}")
 
-# ---- Main Function ----
+# ---- Main ----
 def main():
     try:
         app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
-        # Handlers
+        # Register handlers
         app.add_handler(CommandHandler("start", start))
         app.add_handler(CommandHandler("handyman", handyman))
         app.add_error_handler(error_handler)
 
-        # Run
+        # Run the bot (async polling)
         app.run_polling()
     except Exception as e:
         logger.critical(f"Bot failed to start: {e}")
@@ -80,8 +75,3 @@ def main():
 # ---- Entry Point ----
 if __name__ == "__main__":
     main()
-main()
-
-
-
-
