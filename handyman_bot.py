@@ -24,7 +24,7 @@ if not TELEGRAM_TOKEN or not GEN_API_KEY:
     exit(1)
 
 # Initialize Google GenAI client
-client.configure(api_key=GEN_API_KEY)
+genai_client = client.Client(api_key=GEN_API_KEY)
 
 # ---- Command Handlers ----
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -76,5 +76,6 @@ def main():
 # ---- Entry Point ----
 if __name__ == "__main__":
     main()
+
 
 
