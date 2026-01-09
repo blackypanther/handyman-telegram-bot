@@ -71,70 +71,84 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if user_id not in user_state:
         user_state[user_id] = {}
+import os
+import logging
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+import google.generativeai as genai  # Deprecated package, works for now
 
-    data = user_state[user_id]
+# -------------------------------
+# CONFIGURATION
+# -------------------------------
 
-    # Save answer
-    for key, _ in QUESTIONS:
-        if key not in data:
-            data[key] = update.message.text
-            break
+# Load tokens from environment variables
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
+GEN_API_KEY = os.environ.get("GEN_API_KEY")
 
-    # Ask next question
-    if len(data) < len(QUESTIONS):
-        await update.message.reply_text(
-            QUESTIONS[len(data)][1]
-        )
+# Configure Google Generative AI
+genai.configure(api_key=GEN_API_KEY)
+
+# Enable logging
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
+
+# -------------------------------
+# COMMAND HANDLERS
+# -------------------------------
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Send a message when the command /start is issued."""
+    await update.message.reply_text("Handyman bot is online! Send /help for commands.")
+
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Send a help message."""
+    help_text = (
+        "/start - Start the bot\n"
+        "/help - Show this help message\n"
+        "/generate <prompt> - Generate AI response\n"
+    )
+    await update.message.reply_text(help_text)
+
+async def generate(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Generate a response from Google Generative AI."""
+    prompt = " ".join(context.args)
+    if not prompt:
+        await update.message.reply_text("Please provide a prompt after /generate!")
         return
 
-    # ------------------------------
-    # AI BRAIN (GEMINI)
-    # ------------------------------
-    prompt = f"""
-You are a professional handyman dispatcher.
-
-Customer request:
-Issue: {data['issue']}
-Location: {data['location']}
-Preferred time: {data['time']}
-Budget: {data['budget']}
-Extra details: {data['details']}
-
-Return:
-- Service category
-- Urgency (Low / Medium / High)
-- One-line job summary
-"""
-
     try:
-        response = client.models.generate_content(
-            model="gemini-1.5-flash",
-            contents=prompt
+        # Example using text-bison-001 (adjust model if needed)
+        response = genai.text.generate(
+            model="models/text-bison-001",
+            prompt=prompt
         )
-
-        await update.message.reply_text(
-            "✅ Request logged successfully.\n\n"
-            f"{response.text}\n\n"
-            "Our team will contact you shortly."
-        )
-
+        await update.message.reply_text(response.text)
     except Exception as e:
-        logging.error(f"Gemini API error: {e}")
-        await update.message.reply_text(
-            "❌ Sorry, there was a system issue, but your request has been recorded."
-        )
+        logger.error(f"Error generating AI response: {e}")
+        await update.message.reply_text("Failed to generate response. Try again later.")
 
-    # Reset memory after completion
-    user_state.pop(user_id, None)
-
-# ------------------------------
+# -------------------------------
 # MAIN
-# ------------------------------
-if __name__ == "__main__":
-    app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+# -------------------------------
 
-    print("✅ Handyman bot running...")
+def main():
+    """Start the bot."""
+    app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
+
+    # Register handlers
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler("generate", generate))
+
+    # Run the bot
     app.run_polling()
 
+# -------------------------------
+# ENTRY POINT
+# -------------------------------
+
+if __name__ == "__main__":
+    main()
