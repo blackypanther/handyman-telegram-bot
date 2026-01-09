@@ -16,8 +16,8 @@ import google.generativeai as genai
 # ------------------------------
 # CONFIG
 # ------------------------------
-TELEGRAM_TOKEN = "8587188130:AAFtzw5ig_V9wzunCpUk8HiZBaMcSDQ6yAo"
-GEN_API_KEY = "gen-lang-client-0404387219"
+TELEGRAM_TOKEN = "your Telegram bot token"
+GEN_API_KEY = "your Gemini API key"
 
 genai.configure(api_key=GEN_API_KEY)
 model = genai.GenerativeModel("gemini-pro")
@@ -137,3 +137,4 @@ if __name__ == "__main__":
 
     print("✅ Handyman bot running...")
     app.run_polling()
+
